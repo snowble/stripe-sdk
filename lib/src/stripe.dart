@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:uni_links/uni_links.dart';
+import 'package:link_handler/link_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'stripe_api.dart';
 
 class Stripe {
   Stripe(String publishableKey, {String stripeAccount})
-      : _stripeApi = StripeApi(publishableKey, stripeAccount: stripeAccount);
+      : _stripeApi = StripeApi(publishableKey, stripeAccount: stripeAccount),
+        _linkHandler = LinkHandler();
 
   final StripeApi _stripeApi;
+  final LinkHandler _linkHandler;
   static Stripe _instance;
 
   static Stripe get instance {
@@ -114,7 +116,9 @@ class Stripe {
     final returnUrl = Uri.parse(action['redirect_to_url']['return_url']);
     final completer = Completer<Map<String, dynamic>>();
     StreamSubscription sub;
-    sub = getUriLinksStream().listen((Uri uri) async {
+    sub = _linkHandler.links
+        .map((link) => Uri.parse(link))
+        .listen((Uri uri) async {
       if (uri.scheme == returnUrl.scheme &&
           uri.host == returnUrl.host &&
           uri.queryParameters['requestId'] ==
